@@ -7,10 +7,12 @@ noise = 750 #Noise tolerance for maxima detection
 median = 3 #Radius of median filter
 myelinCH = 2 #Channel containing myelin pictures
 pointsCH = 3 #Channel containing the points
-
+interactive = 1 #Set to 1 to manually threshold each plane, set to 0 to have it done automatically
 
 from ij import IJ
 from ij.measure import ResultsTable
+from ij.gui import WaitForUserDialog as wait
+import sys
 
 #Set the variables
 image = IJ.getImage()
@@ -27,7 +29,18 @@ rt = ResultsTable.getResultsTable() #This object allows us to change the labels 
 
 #Threshold the myelin stack
 IJ.selectWindow(myelin)
-IJ.run("Convert to Mask", "method=Default background=Dark calculate")
+IJ.run("8-bit")
+
+if interactive == 1:
+	for plane in range(1,n_slices+1):
+		IJ.setSlice(plane)
+		message = wait("Threshold", "Click OK when you have finished selecting a threshold for plane %s" %plane)
+		message.show()
+		IJ.run("Convert to Mask", "method=Default background=Dark only")
+	IJ.run("Invert", "stack")
+else:
+	IJ.run("Convert to Mask", "method=Default background=Dark calculate");
+
 IJ.run("Median...", "radius=%s stack" % median)
 IJ.run("Fill Holes", "stack")
 IJ.run("Close-", "stack")
